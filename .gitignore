@@ -1,2 +1,1 @@
-data/raw/*.csv
-__pycache__
+data/csv/*.csv

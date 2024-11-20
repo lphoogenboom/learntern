@@ -2,7 +2,7 @@ name: learntern-env
 channels:
   - defaults
   - pytorch
-  - nvidia # If you want nvidia hardware acceleration
+  #- nvidia # If you want nvidia hardware acceleration
 dependencies:
   # languages
   - python=3.10
@@ -16,7 +16,7 @@ dependencies:
   - pytorch
   - torchvision
   - torchaudio
-  - pytorch-cuda=11.8 # If you own a CUDA enabled device
+  #- pytorch-cuda=11.8 # If you own a CUDA enabled device
   - scikit-learn
 
   # Visualisation Dependencies
