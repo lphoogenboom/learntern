@@ -57,7 +57,7 @@ if __name__ == "__main__":
 	images_train, labels_train = loader.csvLoadMNIST('data/csv/mnist_test.csv') # images is 1000x28x28
 
 	here = Path(__file__).resolve().parent
-	path_splits = here/"data"/"splits"
+	path_numpy = here/"data"/"numpy"
 	path_csv = here/"data"/"csv"
 	path_train = path_csv/"mnist_train.csv"
 	path_test = path_csv/"mnist_test.csv"
@@ -70,5 +70,5 @@ if __name__ == "__main__":
 	images = data_full.drop(columns=['label']).values
 	images = images.reshape(images.shape[0],28,28).astype(np.uint8) # create tensor for tt
 
-	np.save(path_processed/"images.npy", images)
-	np.save(path_processed/"labels.npy", labels)
+	np.save(path_numpy/"images.npy", images)
+	np.save(path_numpy/"labels.npy", labels)
