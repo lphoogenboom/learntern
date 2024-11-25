@@ -89,13 +89,12 @@ if __name__ == "__main__":
     # split = np.load(path_splits/"datasplit.npz")
 
     ## Test Train Split
-    dataset = Dataset(images,labels)
-    split_tt = dataset.trainTestSplit(labels) # Named columns "train"/"test"
+    split_tt = processor.trainTestSplit(labels) # Named columns "train"/"test"
 
     # print((labels.keys()))
 
     ## split training data 5-fold
-    split_5fold = dataset.kFoldSplit(labels, split_tt, "train", 5) # includes test data
+    split_5fold = processor.kFoldSplit(labels, split_tt, "train", 5) # includes test data
 
     ## Save Splits
-    np.savez(path_splits/"datasetIndices.npz", **split_5fold)
+    np.savez(path_splits/"5-fold-indices.npz", **split_5fold)
