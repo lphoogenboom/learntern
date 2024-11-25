@@ -29,7 +29,7 @@ class Dataset(tt.utils.data.Dataset):
 		return dict(image=self.images[index], label=self.labels[index])
 
 if __name__ == "__main__":
-
+	print("==== RAN AS FILE ====")
 	processor = dataProcessor()
 	pwd = processor.getParentDir()
 	images = np.load(pwd/"data"/"arrays"/"images.npy")
