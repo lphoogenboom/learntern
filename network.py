@@ -5,18 +5,11 @@ class Model(nn.Module):
     def __init__(self):
         super().__init__()
 
-        ## Define the layers
-        # e.g.:
-        # self.block_0 = nn.Sequential(
-        #     nn.ReLU(),
-        #     nn.etc...
-        # )
+        self.perceptron = nn.Linear(1, 1, bias=True)
 
     def forward(self, input):
-        # hidden = self.block_0(input)
-        # out = self.block_1(hidden)
-        # return out
-        return 1 # placeholder
+        output = self.perceptron(input)
+        return output
 
 
 if __name__ == "__main__":
