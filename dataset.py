@@ -35,4 +35,8 @@ if __name__ == "__main__":
 	images = np.load(pwd/"data"/"arrays"/"images.npy")
 	labels = np.load(pwd/"data"/"arrays"/"labels.npy")
 
-	dataset = Dataset(images,labels)
+	split = np.load(pwd/"data"/"splits"/"5-fold-indices.npz")
+
+	data_train = Dataset(images[split["train"]],labels[split["train"]])
+
+	print(data_train)
