@@ -5,22 +5,23 @@ channels:
   #- nvidia # If you want nvidia hardware acceleration
 dependencies:
   # languages
-  - python=3.10
+  - python=3.11
+  - pip
   #- r # Do we like R more than python?
 
   # Data Dependencies
   - pandas
   - numpy
 
-  # Learning Dependencies
-  - pytorch
-  - torchvision
-  - torchaudio
-  #- pytorch-cuda=11.8 # If you own a CUDA enabled device
-  - scikit-learn
-
   # Visualisation Dependencies
   - ipykernel
   - matplotlib
   - libpng
   - jpeg
+
+# Learning Dependencies
+  - scikit-learn
+  - pip:
+    - torch
+    - torchvision
+    - torchaudio

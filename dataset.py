@@ -6,7 +6,6 @@ import sys
 
 # For datasplit
 
-
 class Dataset(tt.utils.data.Dataset):
 
 	def __init__(self,images,labels):
@@ -34,5 +33,9 @@ if __name__ == "__main__":
 	pwd = processor.getParentDir()
 	images = np.load(pwd/"data"/"arrays"/"images.npy")
 	labels = np.load(pwd/"data"/"arrays"/"labels.npy")
+	splits = np.load(pwd/"data"/"splits"/"5-fold-indices.npz")
 
-	dataset = Dataset(images,labels)
+
+	type = "val_00"
+	dataset = Dataset(images[splits[type]],labels[splits[type]])
+	print("break")

@@ -9,13 +9,13 @@ from sklearn.model_selection import StratifiedKFold
 
 class dataProcessor():
 
-    def getParentDir(self):
+    def getParentDir(self): # Gets PWD
         parent_dir = Path(__file__).resolve().parent
         return parent_dir
 
     def unzipData(self, zipPath): # unzip archived files
         if Path('data/csv/mnist_test.csv').is_file():
-            print('At least 1 unzipped file exist... \nWill skip unzip until target files are removed.')
+            print('At least 1 unzipped file exist... \nWill not unzip until target directory is empty.')
             return
         
         basePath = self.getParentDir()
@@ -37,7 +37,7 @@ class dataProcessor():
         data = pd.read_csv(targetPath)
         return data
     
-    def trainTestSplit(self,labels):
+    def trainTestSplit(self,labels): # Creates split as INDEX Dictionary
         datasplit = dict()
         idx_train, idx_test, _, _ = train_test_split(
             range(len(labels)),
@@ -49,7 +49,7 @@ class dataProcessor():
         datasplit["test"] = idx_test
         return datasplit
 
-    def kFoldSplit(self, data, indices, key, k):
+    def kFoldSplit(self, data, indices, key, k): # k-fold split as INDICES
         skf_train_val = StratifiedKFold(n_splits=k, shuffle=True)
         for i, (idx_train, idx_va) in enumerate(skf_train_val.split(indices[key], data[indices[key]])):
             indices[f"train_{i:02d}"] = idx_train
@@ -59,7 +59,7 @@ class dataProcessor():
 if __name__ == "__main__":
     print("==== RAN AS FILE ====")
     
-    ''' For Saving the data as numpy arrays '''
+    ''' Will save data as numpy arrays '''
     processor  = dataProcessor()
     processor.unzipData("data/archived/mnist.zip")
     data_train = processor.csvLoad("data/csv/mnist_train.csv")
@@ -68,7 +68,7 @@ if __name__ == "__main__":
     
     labels = data_full['label'].values.astype(np.uint8)
     images = data_full.drop(columns=['label']).values
-    images = images.reshape(images.shape[0],28,28).astype(np.uint8) # create tensor for tt
+    images = images.reshape(images.shape[0],28,28).astype(np.uint8) # create tensor for torch input requirements
 
     path_numpy = processor.getParentDir()/"data"/"arrays"
 
@@ -76,14 +76,13 @@ if __name__ == "__main__":
     np.save(path_numpy/"labels.npy", labels)
 
     ''' For Datasplitting '''
-    processor = dataProcessor()
     here = processor.getParentDir()
     path_data = here/"data"/"arrays" # Original Data
     path_splits = here/"data"/"splits" # Destination for splits
 
     ## Load Data Arrays
-    images = np.load(path_data/"images.npy")
-    labels = np.load(path_data/"labels.npy")
+    # images = np.load(path_data/"images.npy") # Should be loaded already
+    # labels = np.load(path_data/"labels.npy")
 
     # # split contains test data + train data + train data-->(5 * (train_##,val_##) overlapping)
     # split = np.load(path_splits/"datasplit.npz")
@@ -97,4 +96,5 @@ if __name__ == "__main__":
     split_5fold = processor.kFoldSplit(labels, split_tt, "train", 5) # includes test data
 
     ## Save Splits
-    np.savez(path_splits/"5-fold-indices.npz", **split_5fold)
+    np.savez(path_splits/"5-fold-indices.npz", **split_5fold) # INDICES
+    print(split_5fold["val_00"])
