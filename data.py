@@ -7,7 +7,10 @@ import torch as tt
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import StratifiedKFold
 
-class dataProcessor():
+import torchvision.transforms.functional as tvf
+import torch.nn.functional as tf
+
+class DataManager():
 
     def getParentDir(self): # Gets PWD
         parent_dir = Path(__file__).resolve().parent
@@ -55,6 +58,54 @@ class dataProcessor():
             indices[f"train_{i:02d}"] = idx_train
             indices[f"val_{i:02d}"] = idx_va
         return indices
+
+class dataAugmenter():
+     
+     def __init__(self):
+        return
+     
+     def rotateImage(self, *args, **kwargs): # Expected image format: [channel, width, height]
+        image_rotated = tvf.rotate(*args, **kwargs)
+        return image_rotated
+     
+     def rotateBatch(self,batch,angles,*args,**kwargs):
+        angles = tt.tensor(angles).float()
+        rotation_matrices = tt.stack([
+            tt.tensor([
+                [tt.cos(angle), -tt.sin(angle), 0],
+                [tt.sin(angle), tt.cos(angle), 0]
+            ]) for angle in angles
+        ])
+        
+        # Create grid and apply rotation
+        grid = tf.affine_grid(rotation_matrices, batch.size(), align_corners=True)
+        rotated_batch = tf.grid_sample(batch, grid, align_corners=True)
+        return rotated_batch
+     
+
+class Dataset(tt.utils.data.Dataset):
+
+	def __init__(self,images,labels):
+		self.images = images  # (Batch, Height, Width)
+		self.images = self.images[:, None]  # (Batch, 1, Height, Width) required by torch
+		self.images = tt.from_numpy(self.images)  # Convert to tensor
+
+		# Normalise images
+		self.images = self.images.float()
+		self.images -= tt.min(self.images.flatten(start_dim=1), dim=1).values[:, None, None, None] # subtract minimum
+		self.images /= tt.max(self.images.flatten(start_dim=1), dim=1).values[:, None, None, None] # Divide by maximum
+
+		self.labels = tt.from_numpy(labels)
+		self.labels = tt.nn.functional.one_hot(self.labels.long(), num_classes=10)  # 1-hot encoding so neural network can have 10 binary outputs
+
+	def __len__(self):
+		return len(self.images)
+
+	def __getitem__(self, index): # get image-label pair
+        # augment image
+		return dict(image=self.images[index], label=self.labels[index])
+     
+
     
 if __name__ == "__main__":
     print("==== RAN AS FILE ====")

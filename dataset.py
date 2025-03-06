@@ -1,5 +1,5 @@
 from pathlib import Path
-from dataProcessor import dataProcessor
+from data import dataProcessor
 import numpy as np
 import torch as tt
 import sys

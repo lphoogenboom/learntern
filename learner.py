@@ -3,14 +3,13 @@ from network import Model
 from time import time
 import json
 from criterion import Criterion
-from dataset import Dataset
-from dataProcessor import dataProcessor
+from data import Dataset
+from data import DataManager
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 class Learner():
-
 	def __init__(self, dataloader):
 		self.configuration = json.load(open("./configuration.json", "r"))
 
@@ -83,8 +82,8 @@ if __name__ == "__main__":
 
 	'''Some Environment Variables'''
 	# Set Output Paths
-	processor = dataProcessor()
-	here = processor.getParentDir()
+	manager = DataManager()
+	here = manager.getParentDir()
 	path_logs = here/"output"/"logs"
 	path_weights = here/"output"/"weights"
 	path_plots = here/"output"/"plots"

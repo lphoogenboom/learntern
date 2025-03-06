@@ -28,16 +28,18 @@ class Model(nn.Module):
         )
 
         self.dense = nn.Linear(144, 10)
-        self.maxpool_01 = nn.MaxPool2d(kernel_size=4, stride=4)
-        self.maxpool_02 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
         self.final_activation = nn.Softmax(dim=1)
 
     def forward(self, input):
-        hidden = self.conv_block_01(input)     # 28 -> 28
-        hidden = self.maxpool_01(hidden)       # 28 ->  7
+        hidden = self.conv_block_00(input)          # 28 -> 28
+        hidden = self.maxpool(hidden)           # 28 -> 14
 
-        hidden = self.conv_block_02(hidden)    # 13 ->   13
-        hidden = self.maxpool_02(hidden)       # 7 -> 3.5 (-> 3)
+        hidden = self.conv_block_01(input)     # 14 -> 14
+        hidden = self.maxpool(hidden)           # 14 ->  7
+
+        hidden = self.conv_block_02(hidden)     # 7 ->   7
+        hidden = self.maxpool(hidden)           # 7 ->   3.5
         hidden = hidden.view(hidden.size(0), -1)  # Flatten for fully connected layer
         # 32 channels * (3x3) maps => 288 Neurons
         hidden = self.dense(hidden)  # Fully connected layer

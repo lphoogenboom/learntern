@@ -18,6 +18,7 @@ dependencies:
   - matplotlib
   - libpng
   - jpeg
+  - rich
 
 # Learning Dependencies
   - scikit-learn

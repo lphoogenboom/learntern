@@ -1,6 +1,6 @@
 # Import necessary libraries
 from learner import Learner
-from dataProcessor import dataProcessor
+from data import dataProcessor
 import numpy as np
 
 if __name__ == "__main__":
