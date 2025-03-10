@@ -34,9 +34,10 @@ if __name__ == "__main__":
 	batch = next(iter(data_loader["train"]))
 	batch_images = batch["image"]
 	print(np.shape(batch_images))
+	batch_rotations = batch['rotation']
 
 	augmenter = dataAugmenter()
-	batch_images_rotated = augmenter.rotateBatch(batch['image'], [45,90])
+	batch_images_rotated = augmenter.rotateBatch(batch['image'], -batch_rotations)
 
 	fig, axes = plt.subplots(2, 2, figsize=(6, 3))
 	axes[0,0].imshow(batch_images[0,0,:,:], cmap="gray")

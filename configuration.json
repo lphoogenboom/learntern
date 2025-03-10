@@ -1,6 +1,6 @@
 {
-	"batch_size":64,
-	"learning_rate":0.002,
-	"epochs":50,
+	"batch_size":400,
+	"learning_rate":0.00001,
+	"epochs":100,
 	"device":"mps"
 }

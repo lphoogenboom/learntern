@@ -1,5 +1,5 @@
 from pathlib import Path
-from data import dataProcessor
+from data import DataManager
 import numpy as np
 import torch as tt
 import sys
@@ -29,7 +29,7 @@ class Dataset(tt.utils.data.Dataset):
 
 if __name__ == "__main__":
 	print("==== RAN AS FILE ====")
-	processor = dataProcessor()
+	processor = DataManager()
 	pwd = processor.getParentDir()
 	images = np.load(pwd/"data"/"arrays"/"images.npy")
 	labels = np.load(pwd/"data"/"arrays"/"labels.npy")

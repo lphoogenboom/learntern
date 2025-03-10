@@ -8,6 +8,7 @@ class Criterion(nn.Module):
 		super().__init__(*args, **kwargs)
 
 	def forward(self, prediction, reference):
+		
 		loss = ff.l1_loss(prediction, reference)
 		return loss
 	

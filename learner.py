@@ -5,8 +5,11 @@ import json
 from criterion import Criterion
 from data import Dataset
 from data import DataManager
+from data import dataAugmenter
 import numpy as np
 import matplotlib.pyplot as plt
+from network import Model
+from visual import Visualiser
 
 
 class Learner():
@@ -15,6 +18,7 @@ class Learner():
 
 		self.dataloader = dataloader
 		self.criterion = Criterion()
+		self.estimate = None
 
 		self.device = self.configuration["device"]
 		self.model = Model().to(self.device)
@@ -39,19 +43,19 @@ class Learner():
 		'''Iterate over Dataloader'''
 		accuracy = [0, 0]
 
-		counter = 1
+		# counter = 1
 		for data in self.dataloader[phase]:
-			if counter%1000==0:
-				print(f"Step: {counter}")
-			counter += 1
+			# if counter%100==0:
+			# 	print(f"Step: {counter}")
+			# counter += 1
 			image = data["image"].to(self.device)
 			label = data["label"].to(self.device)
 
 			# Get estimated label
-			estimate = self.model(image)
-
+			self.estimate = self.model(image)
+			rotation = next(iter(self.dataloader[phase]))['rotation'].to(tt.float32).to(self.device).view(self.configuration['batch_size'],1)
 			# Loss on estimate
-			loss = Criterion.forward(self, prediction=estimate, reference=label)
+			loss = Criterion.forward(self, prediction=self.estimate, reference=rotation)
 			loss_step += loss.item() # cast to float
 
 			if phase == "train":				
@@ -61,11 +65,11 @@ class Learner():
 				self.optimiser.step()
 				self.optimiser.zero_grad()
 
-			accuracy[0] += tt.sum(tt.argmax(estimate, dim=1) == tt.argmax(label, dim=1)).item()
-			accuracy[1] += len(label)
+			accuracy[0] += tt.sum(tt.argmax(self.estimate, dim=1) == tt.argmax(rotation, dim=1)).item()
+			accuracy[1] += len(rotation)
 
 		# Log step
-		loss_step = loss_step / len(data_loader[phase])
+		loss_step = loss_step / len(self.dataloader[phase])
 		log[f"loss_{phase}"].append(loss_step)
 		log[f"accuracy_{phase}"].append(accuracy[0] / accuracy[1])
 		log[f"time_{phase}"].append(time() - time_step)
@@ -97,7 +101,7 @@ if __name__ == "__main__":
 	'''Important Variables'''
 	# Name of this run
 	run = "Test [Ran as File]"
-	# config = json.load(open("./configuration.json", "r"))
+	config = json.load(open("./configuration.json", "r"))
 	used_splits = ['00']
 
 	for k_split_nr in used_splits: #config.used_splits
@@ -109,8 +113,8 @@ if __name__ == "__main__":
 		data_set_val = Dataset(images[splits[split_val]],labels[splits[split_val]])
 
 		# Define data loader
-		data_loader_train = tt.utils.data.DataLoader(data_set_train, batch_size=5, shuffle=True) #Example
-		data_loader_val = tt.utils.data.DataLoader(data_set_val, batch_size=5, shuffle=True) #Example
+		data_loader_train = tt.utils.data.DataLoader(data_set_train, batch_size=config['batch_size'], shuffle=True) #Example
+		data_loader_val = tt.utils.data.DataLoader(data_set_val, batch_size=config['batch_size'], shuffle=True) #Example
 		data_loader = dict(train=data_loader_train,val=data_loader_val)
 
 		# Define model with dataloader
@@ -169,4 +173,30 @@ if __name__ == "__main__":
 			plt.legend(loc=1)
 			plt.savefig(path_plots/f"test_k_split_{k_split_nr}.png")
 			plt.close()
+
+			batch = next(iter(learner.dataloader['val']))
+			batch_images = batch['image']
+			estimate_rotations = Model().forward(batch_images)
+
+			batch_rotations = batch['rotation']
+			augmenter = dataAugmenter()
+			batch_images_straight = augmenter.rotateBatch(batch['image'], -batch_rotations)
+
+			batch_images_estimated = dataAugmenter().rotateBatch(batch_images,-estimate_rotations)
+			
+			print(batch['rotation'])
+			print(estimate_rotations)
+
+			fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+			axes[0].imshow(batch_images[0,0,:,:], cmap="gray")
+			axes[0].set_title(f"Batch Image 1")
+			axes[0].axis("off")
+
+			axes[1].imshow(batch_images_estimated[0,0,:,:], cmap="gray")
+			axes[1].set_title(f"Batch Image 2")
+			axes[1].axis("off")
+			fig.savefig("output/plots/rotations.png", dpi=300, bbox_inches="tight")
+
+			fig = Visualiser().compareAngles(batch_rotations,estimate_rotations)
+			fig.savefig("output/plots/test.png")
 	print(f"[Training {run}] done")
