@@ -35,10 +35,10 @@ class Model(nn.Module):
             nn.ReLU(),
         )
 
-        self.dense1 = nn.Linear(576, 1)
+        self.dense1 = nn.Linear(576, 360)
         self.dense2 = nn.Linear(360, 1)
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
-        # self.final_activation = nn.Softmax(dim=1)
+        self.final_activation = nn.Softmax(dim=1)
 
     def forward(self, input):
         hidden = self.conv_block_00(input)   # 28 -> 28 
@@ -52,7 +52,8 @@ class Model(nn.Module):
         hidden = self.maxpool(hidden)        #  7 ->  3.5 (-> 3)
 
         hidden = hidden.view(hidden.size(0), -1)  # Flatten for fully connected layer
-        out = 360*self.dense1(hidden)
+        hidden = self.dense1(hidden)
+        out = self.final_activation(hidden)
         # hidden = tt.sigmoid(hidden)
         # hidden = self.dense2(hidden)
         # out = 360*tt.sigmoid(hidden)

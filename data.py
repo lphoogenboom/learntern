@@ -111,6 +111,7 @@ class Dataset(tt.utils.data.Dataset):
     def __getitem__(self, index): # get image-label pair
     # augment image
         dxdy = 0
-        angle = random.randint(0,360)
+        angle = random.randint(0,359)
         rotated_image = dataAugmenter().rotateImage(self.images[index], angle)
+        angle = tt.nn.functional.one_hot(tt.tensor(angle),num_classes=360)
         return dict(image=rotated_image, label=self.labels[index],rotation=angle ,translation=dxdy)

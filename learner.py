@@ -53,7 +53,11 @@ class Learner():
 
 			# Get estimated label
 			self.estimate = self.model(image)
-			rotation = next(iter(self.dataloader[phase]))['rotation'].to(tt.float32).to(self.device).view(self.configuration['batch_size'],1)
+			# print(self.estimate.shape)
+			rotation = next(iter(self.dataloader[phase]))['rotation'].to(self.device)
+			# rotation = tt.argmax(rotation, dim=1)
+			# print(rotation.shape)
+			# rotation = rotation.to(tt.float32).to(self.device).view(self.configuration['batch_size'],1)
 			# Loss on estimate
 			loss = Criterion.forward(self, prediction=self.estimate, reference=rotation)
 			loss_step += loss.item() # cast to float
@@ -176,15 +180,17 @@ if __name__ == "__main__":
 
 			batch = next(iter(learner.dataloader['val']))
 			batch_images = batch['image']
-			estimate_rotations = Model().forward(batch_images)
+			estimate_rotations = tt.argmax(Model().forward(batch_images),dim=1)
+	
 
 			batch_rotations = batch['rotation']
+			batch_rotations = tt.argmax(batch_rotations, dim=1)
 			augmenter = dataAugmenter()
 			batch_images_straight = augmenter.rotateBatch(batch['image'], -batch_rotations)
 
 			batch_images_estimated = dataAugmenter().rotateBatch(batch_images,-estimate_rotations)
 			
-			print(batch['rotation'])
+			print(batch_rotations)
 			print(estimate_rotations)
 
 			fig, axes = plt.subplots(1, 2, figsize=(6, 3))
