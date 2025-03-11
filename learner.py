@@ -189,11 +189,11 @@ if __name__ == "__main__":
 
 			fig, axes = plt.subplots(1, 2, figsize=(6, 3))
 			axes[0].imshow(batch_images[0,0,:,:], cmap="gray")
-			axes[0].set_title(f"Batch Image 1")
+			axes[0].set_title(f"Batch Image")
 			axes[0].axis("off")
 
 			axes[1].imshow(batch_images_estimated[0,0,:,:], cmap="gray")
-			axes[1].set_title(f"Batch Image 2")
+			axes[1].set_title(f"Corrected Image")
 			axes[1].axis("off")
 			fig.savefig("output/plots/rotations.png", dpi=300, bbox_inches="tight")
 
