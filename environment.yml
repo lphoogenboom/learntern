@@ -2,6 +2,7 @@ name: learntern-env
 channels:
   - defaults
   - pytorch
+  - conda-forge
   #- nvidia # If you want nvidia hardware acceleration
 dependencies:
   # languages
@@ -19,7 +20,7 @@ dependencies:
   - libpng
   - jpeg
   - rich
-
+  - playsound
 # Learning Dependencies
   - scikit-learn
   - pip:

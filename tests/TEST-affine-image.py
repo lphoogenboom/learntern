@@ -1,0 +1,59 @@
+# Import necessary libraries
+from learner import Learner
+from data import DataManager, Dataset, DataAugmenter
+import numpy as np
+import json
+
+import torch as tt
+import matplotlib.pyplot as plt
+from network import Model
+
+print('=== RAN AS FILE [learntern/TEST-affine-image.py] ===')
+
+'''Some Environment Variables'''
+# Set Output Paths
+manager = DataManager()
+here = manager.getParentDir()
+path_logs = here/"output"/"logs"
+path_weights = here/"output"/"weights"
+path_plots = here/"output"/"plots"
+
+# Import Data
+images = np.load(here/"data"/"arrays"/"images.npy")
+labels = np.load(here/"data"/"arrays"/"labels.npy")
+splits = np.load(here/"data"/"splits"/"5-fold-indices.npz")
+
+split_train = f"train_00"
+split_val = f"val_00"
+
+run = "Test Affine Augment"
+config = json.load(open("./configuration.json", "r"))
+
+data_set_train = Dataset(images[splits[split_train]],labels[splits[split_train]])
+data_set_val = Dataset(images[splits[split_val]],labels[splits[split_val]])
+
+# Define data loader
+data_loader_train = tt.utils.data.DataLoader(data_set_train, batch_size=config['batch_size'], shuffle=True) #Example
+data_loader_val = tt.utils.data.DataLoader(data_set_val, batch_size=config['batch_size'], shuffle=True) #Example
+data_loader = dict(train=data_loader_train,val=data_loader_val)
+
+batch = next(iter(data_loader["train"]))
+batch_images = batch["image"]
+
+fig, axes = plt.subplots(2, 2, figsize=(6, 3))
+axes[0,0].imshow(batch_images[0,0,:,:], cmap="gray")
+axes[0,0].set_title(f"Batch Image 1")
+axes[0,0].axis("off")
+
+axes[1,0].imshow(batch_images[1,0,:,:], cmap="gray")
+axes[1,0].set_title(f"Batch Image 2")
+axes[1,0].axis("off")
+
+axes[0,1].imshow(batch_images[3,0,:,:], cmap="gray")
+axes[0,1].set_title(f"Batch Image 1 Rotated")
+axes[0,1].axis("off")
+
+axes[1,1].imshow(batch_images[4,0,:,:], cmap="gray")
+axes[1,1].set_title(f"Batch Image 2 Rotated")
+axes[1,1].axis("off")
+plt.show()
