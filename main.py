@@ -1,6 +1,6 @@
 # Import necessary libraries
 from learner import Learner
-from data import DataManager, Dataset, dataAugmenter
+from data import DataManager, Dataset, DataAugmenter
 import numpy as np
 import json
 

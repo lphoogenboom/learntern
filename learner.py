@@ -10,6 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from network import Model
 from visual import Visualiser
+from os import system
+
 
 
 class Learner():
@@ -18,14 +20,23 @@ class Learner():
 
 		self.dataloader = dataloader
 		self.criterion = Criterion()
-		self.estimate = None
+		self.theta_estimate = None
+		self.transform_estimate = None
 
 		self.device = self.configuration["device"]
 		self.model = Model().to(self.device)
 		self.optimiser = tt.optim.AdamW(
 			self.model.parameters(),
-            lr=self.configuration["learning_rate"],
+            lr=self.configuration["learning_rate_start"],
         )
+		# self.optimiser = tt.optim.SGD(
+		# 	self.model.parameters(),
+        #     lr=self.configuration["learning_rate"],
+        # )
+
+	def set_lr(self, learning_rate):
+		for param_group in self.optimiser.param_groups:
+			param_group['lr'] = learning_rate
 
 	def step(self, phase):
 		''' Determine Training/Testing/Validating'''
@@ -45,21 +56,29 @@ class Learner():
 		for batch in self.dataloader[phase]:
 			batch_images = batch["image"].to(self.device)
 
-			# Get estimated label
-			model_output = self.model(batch_images)
-			self.estimate = dict(
-				rotation=model_output[:,0],
-				translation=model_output[:,1:3].view(self.configuration['batch_size'],2), 
-				scale=model_output[:,3]
+			# Get estimated transform
+			theta_estimate, self.transform_estimate = self.model(batch_images)
+			self.theta_estimate = dict(
+				theta_1=theta_estimate[:,0],
+				theta_2=theta_estimate[:,1],
+				theta_3=theta_estimate[:,2],
+				theta_4=theta_estimate[:,3],
+				theta_5=theta_estimate[:,4],
+				theta_6=theta_estimate[:,5],
+				)
+			batch_transform = batch['transform'].to(self.device)
+
+			batch_theta = dict(
+				theta_1=batch_transform[:,0,0],
+				theta_2=batch_transform[:,0,1],
+				theta_3=batch_transform[:,0,2],
+				theta_4=batch_transform[:,1,0],
+				theta_5=batch_transform[:,1,1],
+				theta_6=batch_transform[:,1,2],
 				)
 
-			batch_rotations = batch['rotation'].to(tt.float32).to(self.device)
-			batch_translations = batch['translation'].to(self.device)
-			batch_scales = batch['scale'].to(tt.float32).to(self.device)
-			batch_reference = dict(rotation=batch_rotations, translation=batch_translations, scale=batch_scales)
-
 			# Loss on estimate
-			loss = Criterion.forward(self, estimate=self.estimate, reference=batch_reference)
+			loss = Criterion.forward(self, estimate=self.theta_estimate, reference=batch_theta)
 			loss_step += loss.item() # cast to float
 
 			if phase == "train":				
@@ -139,8 +158,20 @@ if __name__ == "__main__":
 				device=learner.device,
 			)
 
+		fig_loss, ax_loss = plt.subplots()  # For loss plot
+		fig_images, axes = plt.subplots(1, 3, figsize=(6, 3))
+
+		learning_rate_schedule = np.linspace(
+			learner.configuration['learning_rate_start'],
+			learner.configuration['learning_rate_final'],
+			learner.configuration['epochs'])
+
 		# define eval step
 		for epoch in range(learner.configuration["epochs"]):
+
+			# Set Scheduled learning rate
+			learner.set_lr(learning_rate_schedule[epoch])
+			print(learning_rate_schedule[epoch])
 			# print(f"Epoch: {epoch}")
 			# train
 			learner.step("train")
@@ -168,38 +199,29 @@ if __name__ == "__main__":
 			json.dump(log, open(path_logs/f"test_log_k_split_{k_split_nr}.json", "w"), sort_keys=True, indent=4)
 
 			# plot progress
-			plt.figure()
-			plt.plot(range(epoch + 1), log["loss_train"], label="train_loss")
-			plt.plot(range(epoch + 1), log["loss_val"], label="val_loss")
-			plt.xlabel("Epoch")
-			plt.ylabel("Loss")
-			plt.title(f"Training: {run}"+f"split_{k_split_nr}")
-			plt.legend(loc=1)
-			plt.savefig(path_plots/f"test_k_split_{k_split_nr}.png")
-			plt.close()
+			
+			ax_loss.clear()  # clear previous lines each epoch
+			ax_loss.plot(range(epoch + 1), log["loss_train"], label="train_loss")
+			ax_loss.plot(range(epoch + 1), log["loss_val"], label="val_loss")
+			ax_loss.set_xlabel("Epoch")
+			ax_loss.set_ylabel("Loss")
+			ax_loss.set_title(f"Training: {run} split_{k_split_nr}")
+			ax_loss.legend(loc=1)
+
+			fig_loss.savefig(path_plots / f"test_k_split_{k_split_nr}.png")
 
 			batch = next(iter(learner.dataloader['val']))
 			batch_images = batch['image']
-			batch_rotations = batch['rotation']
+			
 			# Get Transforms
-			translation_transform = data_set_val.augmenter.getTranslationTransform(-batch['translation'][0])
-			rotation_transform = data_set_val.augmenter.getCenterRotationTransform(-batch['rotation'][0].item())
-			scale_transform = data_set_val.augmenter.getCenterScaleTransform(1/batch['scale'][0])
+			batch_transform = batch['transform'][0]
+			batch_transform_inverse = data_set_val.augmenter.invertTransform(batch_transform)
+			image_corrected = data_set_val.augmenter.applyTransform(batch_images[0],batch_transform_inverse)
 
-			transform = data_set_val.augmenter.combineTransorms(translation_transform,scale_transform,rotation_transform)
-			image_corrected = data_set_val.augmenter.applyTransform(batch_images[0],transform)
-
-			estimate = learner.estimate
- 
-			translation_transform = data_set_val.augmenter.getTranslationTransform(-estimate['translation'][0])
-			rotation_transform = data_set_val.augmenter.getCenterRotationTransform(-estimate['rotation'][0].item())
-			scale_transform = data_set_val.augmenter.getCenterScaleTransform(1/estimate['scale'][0])
-			transform = data_set_val.augmenter.combineTransorms(translation_transform,scale_transform,rotation_transform)
-			image_estimated = data_set_val.augmenter.applyTransform(batch_images[0],transform)
-			# print(batch['rotation'])
-			# print(estimate_rotations)
-
-			fig, axes = plt.subplots(1, 3, figsize=(6, 3))
+			estimate_transform_inverse = data_set_val.augmenter.invertTransform(learner.transform_estimate[0].to('cpu'))
+			image_estimated = data_set_val.augmenter.applyTransform(batch_images[0],estimate_transform_inverse)
+			print("\n")
+			
 			axes[0].imshow(batch_images[0,0,:,:], cmap="gray")
 			axes[0].set_title(f"Batch Image")
 			axes[0].axis("off")
@@ -211,9 +233,8 @@ if __name__ == "__main__":
 			axes[2].imshow(image_corrected[0,:,:], cmap="gray")
 			axes[2].set_title(f"Real Correction")
 			axes[2].axis("off")
-			fig.savefig("output/plots/rotations.png", dpi=300, bbox_inches="tight")
+			fig_images.savefig("output/plots/rotations.png", dpi=300, bbox_inches="tight")
 
-			# fig = Visualiser().compareAngles(batch_rotations,estimate_rotations)
-			# fig.savefig("output/plots/test.png")
+
 	print(f"[Training {run}] done")
-	# playsound('data/finish-notification.wav') 
+	system('afplay data/finish-notification.wav') 

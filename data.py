@@ -119,6 +119,12 @@ class DataAugmenter():
         combined_transform = combined_transform[:-1,:]
         return combined_transform
     
+    def invertTransform(self, transform):
+        row_3 = tt.tensor([[0,0,1]], dtype=tt.float32)
+        transform_3d = tt.cat([transform,row_3],dim=0)
+        inverse = tt.linalg.inv(transform_3d)
+        return inverse[:-1,:]
+    
     def getTargetTensor(self, W:int, H:int):
         x = tt.arange(W)
         y = tt.arange(H)
@@ -183,6 +189,8 @@ class DataAugmenter():
         sampled_output = tt.zeros([1,28,28], dtype=tt.float32)
         W, H = self.getImageResolution(image)
 
+        inside_mask = (source_coordinates[1,:] >= 0) & (source_coordinates[1,:] <= W - 1) & (source_coordinates[0,:] >= 0) & (source_coordinates[0,:] <= H - 1)
+
         # Clamp for if source coodinates are in fractional terms
         source_x_clamped = tt.clamp(source_coordinates[1,:],0 , W-1)
         source_y_clamped = tt.clamp(source_coordinates[0,:],0 , H-1)
@@ -209,6 +217,7 @@ class DataAugmenter():
         wc = (1 - dx) * dy
         wd = dx * dy
         test = wa * image_top_left + wb * image_top_right + wc * image_bottom_left + wd * image_bottom_right
+        test[~inside_mask] = 0.0
         test = test.reshape(H,W)
         return test.unsqueeze(0)
 
@@ -243,6 +252,7 @@ class Dataset(tt.utils.data.Dataset):
 
         self.labels = tt.from_numpy(labels)
         self.augmenter = DataAugmenter()
+        self.theta = dict()
         # self.labels = tt.nn.functional.one_hot(self.labels.long(), num_classes=10)  # 1-hot encoding so neural network can have 10 binary outputs
 
     def __len__(self):
@@ -269,6 +279,7 @@ class Dataset(tt.utils.data.Dataset):
         scale_transform = self.augmenter.getCenterScaleTransform(scale)
 
         transform = self.augmenter.combineTransorms(rotation_transform,scale_transform,translation_transform)
+
         image_augmented = self.augmenter.applyTransform(image,transform)
 
-        return dict(image=image_augmented, label=self.labels[index],rotation=angle ,translation=tt.tensor(shift_pixels), scale=scale)
+        return dict(image=image_augmented, label=self.labels[index],transform = transform)
