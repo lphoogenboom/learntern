@@ -26,6 +26,6 @@ class Criterion(nn.Module):
                        (estimate['theta_5'] - 1)**2 +  
                        (estimate['theta_6'] - 0)**2)   
 
-		weight_regularisaiton = 1e-4  # Start small, adjust later
+		weight_regularisaiton = 1e-3  # Start small, adjust later
 		loss_total = loss_l1 + weight_regularisaiton * regularisation_loss
 		return loss_total

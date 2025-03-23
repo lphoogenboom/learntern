@@ -1,7 +1,7 @@
 {
 	"batch_size":64,
-	"learning_rate_start":0.001,
-	"learning_rate_final":0.000005,
-	"epochs":500,
+	"learning_rate_start":0.005,
+	"learning_rate_final":0.000025,
+	"epochs":100,
 	"device":"mps"
 }
